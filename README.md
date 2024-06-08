@@ -4,6 +4,8 @@ For simple [MLX](https://github.com/ml-explore/mlx-swift) playground projects, `
 
 So use this template as a fast and easy way to play with [MLX](https://github.com/ml-explore/mlx-swift). 
 
+- Note: MLX Require Xcode to build Metal. And if you are just get started, please use Xcode.
+
 ## Rename the Template
 
 Just rename everything named `mlx-package-template`. Most importantly, the project directory name, and all mentions in `Package.swift`
