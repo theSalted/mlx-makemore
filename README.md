@@ -17,11 +17,11 @@ To run in command line, go to the package directory.
 
 Then `chmod` the helper script:
 
-`~ chmod +x mlx-run.sh`
+`chmod +x mlx-run.sh`
 
 Then:
 
-`~ ./mlx-run.sh --package mlx-package-template`
+`./mlx-run.sh --package mlx-package-template`
 
 (If you renamed project, remember to change `mlx-package-template` arg).
 
