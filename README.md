@@ -1,17 +1,18 @@
-# MLX Package Template
+# MLX Make More
 
-For simple [MLX](https://github.com/ml-explore/mlx-swift) playground projects, `.xcodeproj` is overkill and `.playground` don't support dependencies. A Swift Package is your best bet, but configure it can be a hassle. 
+WIP. Make More with MLX!
 
-So use this template as a fast and easy way to play with [MLX](https://github.com/ml-explore/mlx-swift). 
+makemore takes one text file as input, and predicts more for you. With a wide range of model selections, such as:
 
-- Note: MLX Require Xcode to build Metal. And if you are just get started, please use Xcode.
+- Bigram
+- Multi-layer Perceptron (MLP)
+- Convolution Nerual Network (CNN)
+- Recurrent Neural Network (RNN)
+- Long Short-Term Memory (LSTM)
+- Gated Recurrent Unit (GRU)
+- Transform
 
-## Rename the Template
-
-Just rename everything named `mlx-package-template`. Most importantly, the project directory name, and all mentions in `Package.swift`
-
-You can freely name `Template.swift` and `struct Template` to anything you like. 
-
+![BigramMap](https://github.com/theSalted/mlx-makemore/assets/30554090/2f9a89ba-914e-4c61-b713-e7a4bbb38408)
 
 ## Build Run in CLI
 
@@ -23,15 +24,14 @@ Then `chmod` the helper script:
 
 Then:
 
-`./mlx-run.sh --package mlx-package-template`
-
-(If you renamed project, remember to change `mlx-package-template` arg).
+`./mlx-run.sh --package mlx-makemore`
 
 
 ## Troubleshoot
 
 Try build and run project following CLI instruction.
 
-Alternatively run `xcodebuild build -scheme mlx-package-template -destination 'platform=OS X' -derivedDataPath ./.derivedData`
+Alternatively run `xcodebuild build -scheme mlx-makemore -destination 'platform=OS X' -derivedDataPath ./.derivedData`
 
-(If you renamed project, remember to change `mlx-package-template` arg).
+## Reference
+See [original python repo](makemore) by one and only [Andrej](https://github.com/karpathy)
