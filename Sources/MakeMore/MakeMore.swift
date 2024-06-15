@@ -4,6 +4,7 @@
 // https://swiftpackageindex.com/ml-explore/mlx-swift/main/documentation/mlx
 
 import MLX
+import MLXRandom
 import Foundation
 import Charts
 import SwiftUI
@@ -50,31 +51,32 @@ struct Bigram: Hashable {
         let allCharacters = Array(Set(words.joined())).sorted().map { String($0)}
         
         var characterToIndexLookup: [String: Int] = Dictionary(
-            uniqueKeysWithValues: allCharacters.enumerated().map { ($0.element, $0.offset) })
+            uniqueKeysWithValues: allCharacters.enumerated().map { ($0.element, $0.offset + 1 /* normally should be 0 */) })
         
-        var indexToCharacterLookup: [Int: String] = Dictionary(
-            uniqueKeysWithValues: allCharacters.enumerated().map { ($0.offset, $0.element) })
-        var characterCount = allCharacters.count
+        let specialToken = "." // This approach is more optimize for this use case
+        characterToIndexLookup[specialToken] = 0
         
-        let startCharacter = "<S>"
+        // Uncomment for proper special token support. allCharacters should start 0 instead of one here
+        /**let startCharacter = "<S>"
         characterToIndexLookup[startCharacter] = characterCount
-        indexToCharacterLookup[characterCount] = startCharacter
         
         let endCharacter = "<E>"
-        characterToIndexLookup[endCharacter] = characterCount + 1
-        indexToCharacterLookup[characterCount + 1] = endCharacter
+        characterToIndexLookup[endCharacter] = characterCount + 1**/
         
+        let indexToCharacterLookup: [Int: String] = Dictionary(
+            uniqueKeysWithValues: characterToIndexLookup.map { ($0.value, $0.key) })
+        var characterCount = allCharacters.count
         
         characterCount = characterToIndexLookup.count
-        print(characterCount)
         
         // Syntax like  `array[1, 1] += 1` currently are not working. Instead, we first map bigram frequency in a dict then mapped to tensor
-        let bigramTensor = MLXArray.zeros([28, 28], type: Int.self)
+        let bigramTensor = MLXArray.zeros([characterCount, characterCount], type: Int.self) //
         var bigramFrequency = [Bigram: Int]()
         
         for word in words {
             var characters = Array(word).map { String($0) } // Convert the string to an array of characters
-            characters = [startCharacter] + characters + [endCharacter]
+            /*characters = [startCharacter] + characters + [endCharacter]*/ // Again uncomment for special token support
+            characters = [specialToken] + characters + [specialToken]
             
             // Equivalent to python `for zip(w, w[1:]):` (python auto halt when zip lists of two different sizes.
             for (character1, character2) in zip(characters.dropLast(), characters.dropFirst()) {
@@ -93,8 +95,17 @@ struct Bigram: Hashable {
             bigramTensor[lhsIndex, rhsIndex] = MLXArray(count)
         }
         
-        let length = characterCount - 1
+        Bigram.plotBigrams(bigramTensor, lookup: indexToCharacterLookup)
+        
+        var probability = bigramTensor[0].asType(Float.self)
+        probability = probability / probability.sum()
+        print(probability)
+    }
+    
+    @MainActor
+    static func plotBigrams(_ bigramTensor: MLXArray, lookup indexToCharacterLookup: [Int: String]) {
         let chart = Chart() {
+            let length = indexToCharacterLookup.count - 1
             ForEach(0...length, id: \.self) { x in
                 ForEach(0...length, id: \.self) { y in
                     let frequency = bigramTensor[x, y].asArray(Int.self)[0]
@@ -111,7 +122,7 @@ struct Bigram: Hashable {
                         VStack(alignment: .leading) {
                             Text("\(xCharacter)\(yCharacter)").bold().fontDesign(.monospaced)
                             Text("\(frequency)").fontDesign(.monospaced)
-                        }.font(.caption)
+                        }
                         .padding(2)
                     }
                 }
@@ -119,12 +130,42 @@ struct Bigram: Hashable {
             }
         }
         
-        
         plot(chart, name: "BigramMap")
-        
     }
 }
 
+func searchSorted(_ sortedSequence: MLXArray, values: MLXArray) -> MLXArray {
+    let indices = MLXArray.zeros(like: sortedSequence)
+    
+    for i in 0...values.size {
+        var found = false
+        for j in 0...sortedSequence.size {
+            if (values[i] .< sortedSequence[j]).all().item() {
+                indices[i] = MLXArray(j)
+                found = true
+                break
+            }
+        }
+        if !found {
+            indices[i] = MLXArray(sortedSequence.size - 1)
+        }
+    }
+    
+    return indices
+}
+
+func multiNomial(probability: MLXArray, numberOfSamples: Int, replacement: Bool = true, key: MLXArray?)  -> MLXArray {
+    let probSum = probability.sum()
+    let normalizedProbs = probability / probSum
+    
+    let cumulativeProbs = cumsum(normalizedProbs)
+    
+    let randomSamples = MLXRandom.uniform(low: 0.0, high: 1.0, key: key)
+    
+    let samples = searchSorted(cumulativeProbs, values: randomSamples)
+    
+    return samples
+}
 
 @MainActor 
 func plot(_ chart: Chart<some ChartContent>, name: String) {
