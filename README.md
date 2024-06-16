@@ -12,7 +12,7 @@ makemore takes one text file as input, and predicts more for you. With a wide ra
 - Gated Recurrent Unit (GRU)
 - Transform
 
-![BigramMap](https://github.com/theSalted/mlx-makemore/assets/30554090/2f9a89ba-914e-4c61-b713-e7a4bbb38408)
+![image](https://github.com/theSalted/mlx-makemore/assets/30554090/20d04eff-8c8c-4f1b-a3c3-ef5df100307d)
 
 ## Build Run in CLI
 
