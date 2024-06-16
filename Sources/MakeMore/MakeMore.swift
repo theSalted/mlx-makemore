@@ -154,13 +154,13 @@ func searchSorted(_ sortedSequence: MLXArray, values: MLXArray) -> MLXArray {
     return indices
 }
 
-func multiNomial(probability: MLXArray, numberOfSamples: Int, replacement: Bool = true, key: MLXArray?)  -> MLXArray {
+func multiNomial(probability: MLXArray, numberOfSamples: Int, replacement: Bool = true, key: MLXArray? = nil)  -> MLXArray {
     let probSum = probability.sum()
     let normalizedProbs = probability / probSum
     
     let cumulativeProbs = cumsum(normalizedProbs)
     
-    let randomSamples = MLXRandom.uniform(low: 0.0, high: 1.0, key: key)
+    let randomSamples = MLXRandom.uniform(low: 0.0, high: 1.0, [numberOfSamples], key: key)
     
     let samples = searchSorted(cumulativeProbs, values: randomSamples)
     
