@@ -22,38 +22,11 @@ struct MakeMore {
         
         let names = namesString.split(separator: "\n").map{String($0)}
 
-        let bigramModel = BigramModel.train(words: names)
-//        bigramModel.plotFrequencies()
+        let bigramModel = BigramModel.train(on: names)
         let results = bigramModel.predict(20)
         print(results)
-//        Bigram.plotFrequency(frequencyTensor, lookup: indexToCharacterLookup)
-//                
-//        var probability = bigramTensor[0].asType(Float.self)
-//        
-////        print(probability)
-//        
-//        let key = MLXRandom.key(2147482647)
-////        var probability = MLXRandom.uniform(low: 0.0, high: 1.0, [3], key: key)
-//        probability = probability / probability.sum()
-//        print(probability)
-//        let ix = multiNomial(probability: probability, numberOfSamples: 100, key: key)
-//        let index = ix.asArray(Int.self)
-//        let c = index.map { indexToCharacterLookup[$0]! }
-//        print(c)
-//        
-//        // Calculate frequency
-//        var frequencyDict: [String: Int] = [:]
-//
-//        for char in c {
-//            frequencyDict[char, default: 0] += 1
-//        }
-//
-//        // Print frequency
-//        for (char, count) in frequencyDict {
-//            print("\(char): \(count)")
-//        }
-//        
-//        print("done")
+//        bigramModel.plotFrequencies()
+        bigramModel.evaluateLoss(on: names)
     }
 }
 

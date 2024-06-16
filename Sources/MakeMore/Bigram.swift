@@ -46,8 +46,8 @@ struct BigramModel {
         self.indexToCharacterLookup = indexToCharacterLookup
     }
     
-    static func train(words: [String]) -> BigramModel {
-        print("training...")
+    static func train(on words: [String]) -> BigramModel {
+        print("Bigram training...")
         /// A list of all character in all words
         let allCharacters = Array(Set(words.joined())).sorted().map { String($0)}
         
@@ -104,13 +104,13 @@ struct BigramModel {
     }
     
     func predict(_ count: Int = 0, key: MLXArray? = nil) -> [String] {
-        print("prepping...")
+        print("Bigram prepping...")
         var results: [String] = []
         
         let probability = frequencies.asType(Float.self)
         probability /= probability.sum(axis: 1, keepDims: true)
         
-        print("predicting...")
+        print("Bigram predicting...")
         for _ in 0...count {
             var index = 0
             var result = ""
@@ -127,6 +127,43 @@ struct BigramModel {
         
         return results
     }
+    
+    func evaluateLoss(on words: [String]) {
+        print("Bigram evaluating...")
+        let probability = frequencies.asType(Float.self) + 1
+        probability /= probability.sum(axis: 1, keepDims: true)
+        
+        let specialToken = "."
+        
+        var averageNegativeLogLikelihood = MLXArray(1)
+        
+        var numberOfEval = 0
+        
+        for word in words {
+            var characters = Array(word).map { String($0) } // Convert the string to an array of characters
+            /*characters = [startCharacter] + characters + [endCharacter]*/ // Again uncomment for special token support
+            characters = [specialToken] + characters + [specialToken]
+            
+            // Equivalent to python `for zip(w, w[1:]):` (python auto halt when zip lists of two different sizes.
+            for (character1, character2) in zip(characters.dropLast(), characters.dropFirst()) {
+                guard let index1 = characterToIndexLookup[character1],
+                      let index2 = characterToIndexLookup[character2] else {
+                    print("Could not find index to character while evaluating model")
+                    return
+                }
+                var likelihood = probability[index1, index2]
+                likelihood = log(likelihood)
+                averageNegativeLogLikelihood += likelihood
+                numberOfEval += 1
+            }
+            eval(averageNegativeLogLikelihood)
+        }
+        
+        averageNegativeLogLikelihood = -averageNegativeLogLikelihood
+        averageNegativeLogLikelihood /= MLXArray(numberOfEval)
+        print("Loss (smoothed average negative log likelihood): \(averageNegativeLogLikelihood.asArray(Float.self)[0])")
+    }
+    
     
     @MainActor
     func plotFrequencies() {
