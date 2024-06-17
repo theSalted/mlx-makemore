@@ -31,38 +31,20 @@ struct Bigram: Hashable {
 struct BigramModel {
     let frequencies: MLXArray
     let indexer: Indexer
-    let openingToken: String
-    let closingToken: String
     
     private init(
         frequencies: MLXArray,
-        indexer: Indexer,
-        openingToken: String,
-        closingToken: String
+        indexer: Indexer
     ) {
         self.frequencies = frequencies
         self.indexer = indexer
-        self.openingToken = openingToken
-        self.closingToken = closingToken
     }
     
     static func train(
         on words: [String],
-        wrapperToken: String = "."
-    ) -> BigramModel {
-        train(on: words, openingToken: wrapperToken, closingToken: wrapperToken)
-    }
-    
-    static func train(
-        on words: [String],
-        openingToken: String,
-        closingToken: String
+        indexer: Indexer
     ) -> BigramModel {
         print("Bigram training...")
-        /// A list of all character in all words
-        let indexer = openingToken == closingToken ?
-            Indexer.create(from: words, wrapperToken: openingToken) :
-            Indexer.create(from: words, openingToken: openingToken, closingToken: closingToken)
         // Syntax like  `array[1, 1] += 1` currently are not working. Instead, we first map bigram frequency in a dict then mapped to tensor
         let tokenCount = indexer.tokens.count
         let frequencies = MLXArray.zeros([tokenCount, tokenCount], type: Int.self) //
@@ -71,7 +53,7 @@ struct BigramModel {
         for word in words {
             var characters = Array(word).map { String($0) } // Convert the string to an array of characters
             /*characters = [startCharacter] + characters + [endCharacter]*/ // Again uncomment for special token support
-            characters = [openingToken] + characters + [closingToken]
+            characters = [indexer.openingToken] + characters + [indexer.closingToken]
             
             // Equivalent to python `for zip(w, w[1:]):` (python auto halt when zip lists of two different sizes.
             for (character1, character2) in zip(characters.dropLast(), characters.dropFirst()) {
@@ -91,9 +73,7 @@ struct BigramModel {
         
         return BigramModel(
             frequencies: frequencies,
-            indexer: indexer,
-            openingToken: openingToken,
-            closingToken: closingToken
+            indexer: indexer
         )
     }
     
@@ -112,7 +92,7 @@ struct BigramModel {
             while true {
                 index = multinomial(probability: probability[index], numberOfSamples: 1).asArray(Int.self)[0]
                 let predictedCharacter = indexer.indexToTokenLookup[index]
-                if predictedCharacter == closingToken {
+                if predictedCharacter == indexer.closingToken {
                     break
                 }
                 result += predictedCharacter ?? ""
@@ -136,7 +116,7 @@ struct BigramModel {
         for word in words {
             var characters = Array(word).map { String($0) } // Convert the string to an array of characters
             /*characters = [startCharacter] + characters + [endCharacter]*/ // Again uncomment for special token support
-            characters = [openingToken] + characters + [closingToken]
+            characters = [indexer.openingToken] + characters + [indexer.closingToken]
             
             // Equivalent to python `for zip(w, w[1:]):` (python auto halt when zip lists of two different sizes.
             for (character1, character2) in zip(characters.dropLast(), characters.dropFirst()) {
