@@ -1,6 +1,6 @@
 //
 //  Bigram.swift
-//  
+//
 //
 //  Created by Yuhao Chen on 6/17/24.
 //
@@ -29,67 +29,60 @@ struct Bigram: Hashable {
 }
 
 struct BigramModel {
-    let trainingWords: [String]
     let frequencies: MLXArray
-    let characterToIndexLookup: [String: Int]
-    let indexToCharacterLookup: [Int: String]
+    let indexer: Indexer
+    let openingToken: String
+    let closingToken: String
     
     private init(
-        trainingWords: [String],
         frequencies: MLXArray,
-        characterToIndexLookup: [String : Int],
-        indexToCharacterLookup: [Int : String]
+        indexer: Indexer,
+        openingToken: String,
+        closingToken: String
     ) {
-        self.trainingWords = trainingWords
         self.frequencies = frequencies
-        self.characterToIndexLookup = characterToIndexLookup
-        self.indexToCharacterLookup = indexToCharacterLookup
+        self.indexer = indexer
+        self.openingToken = openingToken
+        self.closingToken = closingToken
     }
     
-    static func train(on words: [String]) -> BigramModel {
+    static func train(
+        on words: [String],
+        wrapperToken: String = "."
+    ) -> BigramModel {
+        train(on: words, openingToken: wrapperToken, closingToken: wrapperToken)
+    }
+    
+    static func train(
+        on words: [String],
+        openingToken: String,
+        closingToken: String
+    ) -> BigramModel {
         print("Bigram training...")
         /// A list of all character in all words
-        let allCharacters = Array(Set(words.joined())).sorted().map { String($0)}
-        
-        var characterToIndexLookup: [String: Int] = Dictionary(
-            uniqueKeysWithValues: allCharacters.enumerated().map { ($0.element, $0.offset + 1 /* normally should be 0 */) })
-        
-        let specialToken = "." // This approach is more optimize for this use case
-        characterToIndexLookup[specialToken] = 0
-        
-        // Uncomment for proper special token support. allCharacters should start 0 instead of one here
-        /**let startCharacter = "<S>"
-        characterToIndexLookup[startCharacter] = characterCount
-        
-        let endCharacter = "<E>"
-        characterToIndexLookup[endCharacter] = characterCount + 1**/
-        
-        let indexToCharacterLookup: [Int: String] = Dictionary(
-            uniqueKeysWithValues: characterToIndexLookup.map { ($0.value, $0.key) })
-        var characterCount = allCharacters.count
-        
-        characterCount = characterToIndexLookup.count
-        
+        let indexer = openingToken == closingToken ?
+            Indexer.create(from: words, wrapperToken: openingToken) :
+            Indexer.create(from: words, openingToken: openingToken, closingToken: closingToken)
         // Syntax like  `array[1, 1] += 1` currently are not working. Instead, we first map bigram frequency in a dict then mapped to tensor
-        let frequencies = MLXArray.zeros([characterCount, characterCount], type: Int.self) //
-        var bigramFrequency = [Bigram: Int]()
+        let tokenCount = indexer.tokens.count
+        let frequencies = MLXArray.zeros([tokenCount, tokenCount], type: Int.self) //
+        var frequencyLookup = [Bigram: Int]()
         
         for word in words {
             var characters = Array(word).map { String($0) } // Convert the string to an array of characters
             /*characters = [startCharacter] + characters + [endCharacter]*/ // Again uncomment for special token support
-            characters = [specialToken] + characters + [specialToken]
+            characters = [openingToken] + characters + [closingToken]
             
             // Equivalent to python `for zip(w, w[1:]):` (python auto halt when zip lists of two different sizes.
             for (character1, character2) in zip(characters.dropLast(), characters.dropFirst()) {
                 let bigram = Bigram(character1, character2)
-                bigramFrequency[bigram, default: 0] += 1
+                frequencyLookup[bigram, default: 0] += 1
             }
         }
         
-        
-        for (bigram, count) in bigramFrequency {
-            guard let lhsIndex = characterToIndexLookup[bigram.lhs],
-                  let rhsIndex = characterToIndexLookup[bigram.rhs] else {
+        for (bigram, count) in frequencyLookup {
+            guard let lhsIndex = indexer.tokenToIndexLookup[bigram.lhs],
+                  let rhsIndex = indexer.tokenToIndexLookup[bigram.rhs] else {
                 fatalError("Can't find characters in lookup")
             }
             
@@ -97,10 +90,11 @@ struct BigramModel {
         }
         
         return BigramModel(
-            trainingWords: words,
             frequencies: frequencies,
-            characterToIndexLookup: characterToIndexLookup,
-            indexToCharacterLookup: indexToCharacterLookup)
+            indexer: indexer,
+            openingToken: openingToken,
+            closingToken: closingToken
+        )
     }
     
     func predict(_ count: Int = 0, key: MLXArray? = nil) -> [String] {
@@ -117,9 +111,11 @@ struct BigramModel {
             
             while true {
                 index = multinomial(probability: probability[index], numberOfSamples: 1).asArray(Int.self)[0]
-                let predictedCharacter = indexToCharacterLookup[index]
+                let predictedCharacter = indexer.indexToTokenLookup[index]
+                if predictedCharacter == closingToken {
+                    break
+                }
                 result += predictedCharacter ?? ""
-                if index == 0 { break }
             }
             
             results.append(result)
@@ -128,12 +124,10 @@ struct BigramModel {
         return results
     }
     
-    func evaluateLoss(on words: [String]) {
+    func evaluate(on words: [String]) {
         print("Bigram evaluating...")
         let probability = frequencies.asType(Float.self) + 1
         probability /= probability.sum(axis: 1, keepDims: true)
-        
-        let specialToken = "."
         
         var averageNegativeLogLikelihood = MLXArray(1)
         
@@ -142,12 +136,12 @@ struct BigramModel {
         for word in words {
             var characters = Array(word).map { String($0) } // Convert the string to an array of characters
             /*characters = [startCharacter] + characters + [endCharacter]*/ // Again uncomment for special token support
-            characters = [specialToken] + characters + [specialToken]
+            characters = [openingToken] + characters + [closingToken]
             
             // Equivalent to python `for zip(w, w[1:]):` (python auto halt when zip lists of two different sizes.
             for (character1, character2) in zip(characters.dropLast(), characters.dropFirst()) {
-                guard let index1 = characterToIndexLookup[character1],
-                      let index2 = characterToIndexLookup[character2] else {
+                guard let index1 = indexer.tokenToIndexLookup[character1],
+                      let index2 = indexer.tokenToIndexLookup[character2] else {
                     print("Could not find index to character while evaluating model")
                     return
                 }
@@ -174,12 +168,12 @@ struct BigramModel {
     private func plotHeatMap(_ tensor: MLXArray, name: String) {
         print("plotting...")
         let chart = Chart() {
-            let length = indexToCharacterLookup.count - 1
+            let length = indexer.tokenToIndexLookup.count - 1
             ForEach(0...length, id: \.self) { x in
                 ForEach(0...length, id: \.self) { y in
                     let value = tensor[x, y].asArray(Int.self)[0]
-                    let xCharacter = indexToCharacterLookup[x] ?? "unknown"
-                    let yCharacter = indexToCharacterLookup[y] ?? "unknown"
+                    let xCharacter = indexer.indexToTokenLookup[x] ?? "unknown"
+                    let yCharacter = indexer.indexToTokenLookup[y] ?? "unknown"
                     RectangleMark(x: .value(yCharacter, y),
                                   y: .value(xCharacter, x),
                                   width: 60,
