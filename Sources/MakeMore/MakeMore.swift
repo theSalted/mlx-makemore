@@ -5,6 +5,7 @@
 
 import MLX
 import MLXRandom
+import MLXNN
 import Foundation
 import Charts
 import SwiftUI
@@ -20,14 +21,24 @@ struct MakeMore {
             fatalError("Can't extract contents of names.txt")
         }
         
+        
         let names = namesString.split(separator: "\n").map{String($0)}
-
-        let bigramModel = BigramModel.train(on: names)
-        let results = bigramModel.predict(20)
-        print(results)
+        let wrapperToken = "."
+        let indexer = Indexer.create(from: names, wrapperToken: ".")
+        let key = MLXRandom.key(1234)
+        
+        let bigramModel = BigramModel.train(on: names, indexer: indexer)
 //        bigramModel.plotFrequencies()
-        bigramModel.evaluateLoss(on: names)
+        let bgResults = bigramModel.predict(20, key: key)
+        print(bgResults)
+//        bigramModel.evaluate(on: names)
+
+        // MLP
+        // Training set (x, y)
+        let (x, y) = SimpleMLP.createInputsOutputs(from: names, indexer: indexer, wrapperToken: wrapperToken)
+        let model = SimpleMLP(key: key)
+        model.train(inputs: x, outputs: y, learningRate: 10, epochSize: 200)
+        let mlpResults = model.sample(20, indexer: indexer, key: key)
+        print(mlpResults)
     }
 }
-
-

@@ -78,24 +78,26 @@ struct BigramModel {
     }
     
     func predict(_ count: Int = 0, key: MLXArray? = nil) -> [String] {
-        print("Bigram prepping...")
+        print("Bigram predicting...")
         var results: [String] = []
         
         let probability = frequencies.asType(Float.self)
         probability /= probability.sum(axis: 1, keepDims: true)
         
-        print("Bigram predicting...")
         for _ in 0...count {
             var index = 0
             var result = ""
             
             while true {
                 index = multinomial(probability: probability[index], numberOfSamples: 1).asArray(Int.self)[0]
-                let predictedCharacter = indexer.indexToTokenLookup[index]
+                guard let predictedCharacter = indexer.indexToTokenLookup[index] else {
+                    print("Couldn't find character from indexer")
+                    break
+                }
                 if predictedCharacter == indexer.closingToken {
                     break
                 }
-                result += predictedCharacter ?? ""
+                result += predictedCharacter
             }
             
             results.append(result)
