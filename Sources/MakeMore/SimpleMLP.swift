@@ -11,12 +11,12 @@ import MLXNN
 import MLXRandom
 import MLXOptimizers
 
-/// A simple MLP with single hidden layer
+/// A simple MLP with single hidden layer and process
 class SimpleMLP: Module, UnaryLayer, MMNeuralNetwork {
     var weights: MLXArray
     let dimension: Int
-    init(dimension: Int = 27, key: MLXArray? = nil) {
-        self.weights = MLXRandom.normal([dimension, dimension], key: key)
+    init(dimension: Int, key: MLXArray? = nil) {
+        self.weights = MLXRandom.normal([dimension, dimension])
         self.dimension = dimension
     }
     
@@ -39,7 +39,7 @@ class SimpleMLP: Module, UnaryLayer, MMNeuralNetwork {
     func loss(model: SimpleMLP, x: MLXArray, y: MLXArray) -> MLXArray {
         /* Usually people consider to the loss part of forward layer too */
         let probability = model(x)
-        return -probability[MLXArray(x.ndim), y].log().mean() + 0.01 * (weights ** 2).mean()
+        return -probability[MLXArray(0..<x.shape[0]), y].log().mean() + 0.01 * (weights ** 2).mean()
     }
 
     
@@ -53,7 +53,7 @@ class SimpleMLP: Module, UnaryLayer, MMNeuralNetwork {
         /* We use stochastic gradient descent as our backprop method */
         let optimizer = SGD(learningRate: lr)
         
-        for epoch in 0...epochSize-1 {
+        for epoch in 0..<epochSize {
             eval(x, y, self.parameters())
             
             let lg = valueAndGrad(model: self, loss)
@@ -64,11 +64,11 @@ class SimpleMLP: Module, UnaryLayer, MMNeuralNetwork {
             
             eval(self, optimizer)
             
-            print("SimMLP Epoch \(epoch)/\(epochSize - 1): loss at \(loss.asArray(Float.self)[0])")
+            print("SimMLP Epoch \(epoch + 1)/\(epochSize): loss at \(loss.asArray(Float.self)[0])")
         }
     }
     
-    func sample(_ count: Int = 0, indexer: Indexer, key: MLXArray? = nil) -> [String] {
+    func sample(_ count: Int = 0, indexer: Indexer) -> [String] {
         var results: [String] = []
         
         print("SimMLP predicting...")

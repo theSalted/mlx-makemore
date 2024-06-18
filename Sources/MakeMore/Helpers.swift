@@ -67,11 +67,6 @@ func multinomial(probability: MLXArray, numberOfSamples: Int, replacement: Bool 
     return samples
 }
 
-
-
-
-
-
 @MainActor
 func plot(_ chart: Chart<some ChartContent>,
           name: String,

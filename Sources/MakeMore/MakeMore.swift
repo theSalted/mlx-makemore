@@ -25,20 +25,23 @@ struct MakeMore {
         let names = namesString.split(separator: "\n").map{String($0)}
         let wrapperToken = "."
         let indexer = Indexer.create(from: names, wrapperToken: ".")
-        let key = MLXRandom.key(1234)
+        /*MLXRandom.seed(1234)*/
         
+        // MARK: BIGRAM
         let bigramModel = BigramModel.train(on: names, indexer: indexer)
-//        bigramModel.plotFrequencies()
-        let bgResults = bigramModel.predict(20, key: key)
+        let bgResults = bigramModel.predict(20)
         print(bgResults)
-//        bigramModel.evaluate(on: names)
+        /*
+        bigramModel.plotFrequencies()
+        bigramModel.evaluate(on: names)
+        */
 
-        // MLP
+        // MARK: SimpleMLP (Single Layer Bigram MLP)
         // Training set (x, y)
         let (x, y) = SimpleMLP.createInputsOutputs(from: names, indexer: indexer, wrapperToken: wrapperToken)
-        let model = SimpleMLP(key: key)
-        model.train(inputs: x, outputs: y, learningRate: 10, epochSize: 200)
-        let mlpResults = model.sample(20, indexer: indexer, key: key)
+        let model = SimpleMLP(dimension: 27)
+        model.train(inputs: x, outputs: y, learningRate: 50, epochSize: 200)
+        let mlpResults = model.sample(20, indexer: indexer)
         print(mlpResults)
     }
 }

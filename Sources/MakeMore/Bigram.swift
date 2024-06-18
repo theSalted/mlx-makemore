@@ -77,7 +77,7 @@ struct BigramModel {
         )
     }
     
-    func predict(_ count: Int = 0, key: MLXArray? = nil) -> [String] {
+    func predict(_ count: Int = 0) -> [String] {
         print("Bigram predicting...")
         var results: [String] = []
         
@@ -148,7 +148,7 @@ struct BigramModel {
     
     @MainActor
     private func plotHeatMap(_ tensor: MLXArray, name: String) {
-        print("plotting...")
+        print("Bigram plotting...")
         let chart = Chart() {
             let length = indexer.tokenToIndexLookup.count - 1
             ForEach(0...length, id: \.self) { x in
