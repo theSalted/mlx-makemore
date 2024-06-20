@@ -13,34 +13,52 @@ extension MMNeuralNetwork {
     static func createInputsOutputs(
         from words: [String],
         indexer: Indexer,
-        wrapperToken: String
+        wrapperToken: String,
+        openingPaddingSize: Int = 1,
+        printDebug: Bool = false
     ) -> (inputs: MLXArray, outputs: MLXArray) {
-        return createInputsOutputs(from: words, indexer: indexer, openingToken: wrapperToken, closingToken: wrapperToken)
+        return createInputsOutputs(
+            from: words,
+            indexer: indexer, 
+            openingToken: wrapperToken,
+            closingToken: wrapperToken,
+            openingPaddingSize: openingPaddingSize,
+            printDebug: printDebug
+        )
     }
 
     static func createInputsOutputs(
         from words: [String],
         indexer: Indexer,
         openingToken: String,
-        closingToken: String
+        closingToken: String,
+        openingPaddingSize: Int,
+        printDebug: Bool = false
     ) -> (inputs: MLXArray, outputs: MLXArray) {
         var inputs: [Int] = []
         var outputs: [Int] = []
-        
         for word in words {
-            var characters = Array(word).map { String($0) }
-            characters = [openingToken] + characters + [closingToken]
-            
-            for (character1, character2) in zip(characters.dropLast(), characters.dropFirst()) {
-                guard let index1 = indexer.tokenToIndexLookup[character1],
-                      let index2 = indexer.tokenToIndexLookup[character2] else {
+            let characters = Array(word).map { String($0) }
+            var context: [Int] = Array(repeating: 0, count: openingPaddingSize)
+            if printDebug {
+                print(word)
+            }
+            for character in characters + [closingToken] {
+                guard let index = indexer.tokenToIndexLookup[character] else {
                     fatalError("Could not find index to character while evaluating model")
                 }
-                inputs.append(index1)
-                outputs.append(index2)
+                inputs.append(contentsOf: context)
+                outputs.append(index)
+                if printDebug {
+                    print("\(context.map({ index in indexer.indexToTokenLookup[index]!}).joined()) -> \(indexer.indexToTokenLookup[index]!)")
+                }
+                context.removeFirst()
+                context += [index]
             }
         }
-        
-        return (MLXArray(inputs), MLXArray(outputs))
+        return (MLXArray(inputs, 
+                         openingPaddingSize == 1 ?
+                            nil : [inputs.count / openingPaddingSize, openingPaddingSize]),
+                MLXArray(outputs))
     }
 }

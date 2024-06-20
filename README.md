@@ -5,7 +5,8 @@ WIP. Make More with MLX!
 makemore takes one text file as input, and predicts more for you. With a wide range of model selections, such as:
 
 - [x] Bigram
-- [x] Multi-layer Perceptron (MLP)
+- [x] Bigram Neural Network
+- [ ] Multi-layer Perceptron (MLP)
 - [ ] Convolution Nerual Network (CNN)
 - [ ] Recurrent Neural Network (RNN)
 - [ ] Long Short-Term Memory (LSTM)

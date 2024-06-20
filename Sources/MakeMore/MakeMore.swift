@@ -28,18 +28,35 @@ struct MakeMore {
         /*MLXRandom.seed(1234)*/
         
         // MARK: BIGRAM
+        /*bigram(names: names, indexer: indexer)*/
+
+        // MARK: BigramNeural (Single Layer Bigram MLP)
+        /*bigramNeuralNetwork(names: names, indexer: indexer, wrapperToken: wrapperToken)*/
+        
+        let paddingSize = 3
+        let (x, y) = BigramNeural.createInputsOutputs(
+            from: Array(names[0..<5]),
+            indexer: indexer, 
+            wrapperToken: wrapperToken,
+            openingPaddingSize: paddingSize,
+            printDebug: true
+        )
+        print(x.shape, x.dtype)
+        print(y.shape, y.dtype)
+    }
+    
+    @MainActor
+    static func bigram(names: [String], indexer: Indexer, plot: Bool = true, evaluate: Bool = true) {
         let bigramModel = BigramModel.train(on: names, indexer: indexer)
         let bgResults = bigramModel.predict(20)
         print(bgResults)
-        /*
         bigramModel.plotFrequencies()
         bigramModel.evaluate(on: names)
-        */
-
-        // MARK: SimpleMLP (Single Layer Bigram MLP)
-        // Training set (x, y)
-        let (x, y) = SimpleMLP.createInputsOutputs(from: names, indexer: indexer, wrapperToken: wrapperToken)
-        let model = SimpleMLP(dimension: 27)
+    }
+    
+    static func bigramNeuralNetwork(names: [String], indexer: Indexer, wrapperToken: String) {
+        let (x, y) = BigramNeural.createInputsOutputs(from: names, indexer: indexer, wrapperToken: wrapperToken)
+        let model = BigramNeural(dimension: 27)
         model.train(inputs: x, outputs: y, learningRate: 50, epochSize: 200)
         let mlpResults = model.sample(20, indexer: indexer)
         print(mlpResults)

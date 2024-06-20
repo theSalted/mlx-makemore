@@ -12,7 +12,7 @@ import MLXRandom
 import MLXOptimizers
 
 /// A simple MLP with single hidden layer and process
-class SimpleMLP: Module, UnaryLayer, MMNeuralNetwork {
+class BigramNeural: Module, UnaryLayer, MMNeuralNetwork {
     var weights: MLXArray
     let dimension: Int
     init(dimension: Int, key: MLXArray? = nil) {
@@ -36,7 +36,7 @@ class SimpleMLP: Module, UnaryLayer, MMNeuralNetwork {
         return probability
     }
     
-    func loss(model: SimpleMLP, x: MLXArray, y: MLXArray) -> MLXArray {
+    func loss(model: BigramNeural, x: MLXArray, y: MLXArray) -> MLXArray {
         /* Usually people consider to the loss part of forward layer too */
         let probability = model(x)
         return -probability[MLXArray(0..<x.shape[0]), y].log().mean() + 0.01 * (weights ** 2).mean()
