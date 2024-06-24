@@ -10,11 +10,11 @@ import MLX
 protocol MMNeuralNetwork {}
 
 extension MMNeuralNetwork {
-    static func createInputsOutputs(
+    static func formatInputsOutputs(
         from words: [String],
         indexer: Indexer,
         wrapperToken: String,
-        openingPaddingSize: Int = 1,
+        blockSize: Int = 1,
         printDebug: Bool = false
     ) -> (inputs: MLXArray, outputs: MLXArray) {
         return createInputsOutputs(
@@ -22,7 +22,7 @@ extension MMNeuralNetwork {
             indexer: indexer, 
             openingToken: wrapperToken,
             closingToken: wrapperToken,
-            openingPaddingSize: openingPaddingSize,
+            blockSize: blockSize,
             printDebug: printDebug
         )
     }
@@ -32,14 +32,14 @@ extension MMNeuralNetwork {
         indexer: Indexer,
         openingToken: String,
         closingToken: String,
-        openingPaddingSize: Int,
+        blockSize: Int,
         printDebug: Bool = false
     ) -> (inputs: MLXArray, outputs: MLXArray) {
         var inputs: [Int] = []
         var outputs: [Int] = []
         for word in words {
             let characters = Array(word).map { String($0) }
-            var context: [Int] = Array(repeating: 0, count: openingPaddingSize)
+            var context: [Int] = Array(repeating: 0, count: blockSize)
             if printDebug {
                 print(word)
             }
@@ -57,8 +57,8 @@ extension MMNeuralNetwork {
             }
         }
         return (MLXArray(inputs, 
-                         openingPaddingSize == 1 ?
-                            nil : [inputs.count / openingPaddingSize, openingPaddingSize]),
+                         blockSize == 1 ?
+                            nil : [inputs.count / blockSize, blockSize]),
                 MLXArray(outputs))
     }
 }

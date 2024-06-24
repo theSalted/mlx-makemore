@@ -13,9 +13,6 @@ import SwiftUI
 
 // Function to handle MLXArray input
 func oneHot(_ tensor: MLXArray, numberOfClasses: Int? = nil) -> MLXArray {
-    guard tensor.shape.count == 1 else {
-            fatalError("Input tensor must be 1-dimensional")
-    }
     let dtype = tensor.dtype
     let indices = tensor.asArray(Int.self)
     let inferredClasses = numberOfClasses ?? (indices.max() ?? -1) + 1
@@ -106,4 +103,10 @@ func plot(_ content: some View, name: String) {
     } catch {
         fatalError("Failed to save chart image: \(error)")
     }
+}
+
+struct IndexedPair<Element1, Element2>: Identifiable {
+    let id: Int
+    let element1: Element1
+    let element2: Element2
 }

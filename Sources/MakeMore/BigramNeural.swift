@@ -15,31 +15,32 @@ import MLXOptimizers
 class BigramNeural: Module, UnaryLayer, MMNeuralNetwork {
     var weights: MLXArray
     let dimension: Int
-    init(dimension: Int, key: MLXArray? = nil) {
+    
+    init(dimension: Int) {
         self.weights = MLXRandom.normal([dimension, dimension])
         self.dimension = dimension
     }
     
-    func callAsFunction(_ x: MLX.MLXArray) -> MLX.MLXArray {
+    func callAsFunction(_ x: MLXArray) -> MLXArray {
         /* The forward layers  (only 1 hidden layer) */
         
         // Input to the network - one-hot encoding
         let xEncoded = oneHot(x, numberOfClasses: dimension).asType(Float32.self)
         
-        // Logits, i.e. the hidden layer
+        /// Logits, i.e. the output of hidden layer before activation function is applied
         let logits = matmul(xEncoded, weights)
         
         // Softmax
         let counts = logits.exp()
-        let probability = counts / counts.sum(axis: 1, keepDims: true)
+        let probabilities = counts / counts.sum(axis: 1, keepDims: true)
         
-        return probability
+        return probabilities
     }
     
     func loss(model: BigramNeural, x: MLXArray, y: MLXArray) -> MLXArray {
         /* Usually people consider to the loss part of forward layer too */
-        let probability = model(x)
-        return -probability[MLXArray(0..<x.shape[0]), y].log().mean() + 0.01 * (weights ** 2).mean()
+        let probabilities = model(x)
+        return -probabilities[MLXArray(0..<x.shape[0]), y].log().mean() + 0.01 * (weights ** 2).mean() // Cross entropy
     }
 
     
@@ -47,31 +48,40 @@ class BigramNeural: Module, UnaryLayer, MMNeuralNetwork {
         inputs x: MLXArray,
         outputs y: MLXArray,
         learningRate lr: Float = 1e-1,
-        epochSize: Int = 20
+        epochSize: Int = 20,
+        debugPrint: Bool = true
     ) {
-        print("SimMLP training...")
+        if debugPrint {
+            print("Bigram Neural training...")
+        }
         /* We use stochastic gradient descent as our backprop method */
         let optimizer = SGD(learningRate: lr)
         
+        eval(x, y, self.parameters())
+        
         for epoch in 0..<epochSize {
-            eval(x, y, self.parameters())
             
-            let lg = valueAndGrad(model: self, loss)
+            let lossAndGradients = valueAndGrad(model: self, loss)
             
-            let (loss, grads) = lg(self, x, y)
+            let (loss, grads) = lossAndGradients(self, x, y)
             
             optimizer.update(model: self, gradients: grads)
             
-            eval(self, optimizer)
+            eval(self, optimizer) // Prevent graphs from getting too large by eval it every epoch. Reference: MLX - Lazy Evaluation
+            if debugPrint {
+                print("Bigram Neural Epoch \(epoch + 1)/\(epochSize) Loss: \(loss.asArray(Float.self)[0])")
+            }
             
-            print("SimMLP Epoch \(epoch + 1)/\(epochSize): loss at \(loss.asArray(Float.self)[0])")
         }
     }
     
-    func sample(_ count: Int = 0, indexer: Indexer) -> [String] {
+    func sample(
+        _ count: Int = 0,
+        indexer: Indexer
+    ) -> [String] {
         var results: [String] = []
         
-        print("SimMLP predicting...")
+        print("Bigram Neural predicting...")
         for _ in 0...count {
             var index = 0
             var result = ""
