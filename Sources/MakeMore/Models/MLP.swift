@@ -1,3 +1,4 @@
+
 //
 //  MLP.swift
 //
@@ -101,18 +102,19 @@ class MLP: Module, UnaryLayer, MMNeuralNetwork {
         }
         
         eval(x, y)
-        
+        let inputSize = x.shape[0]
         // Print initial loss
         let initialLoss = loss(model: self, x: x, y: y)
         print("Initial Loss: \(initialLoss.asArray(Float.self)[0])")
         
         for epoch in 0..<epochSize {
+            let indexes = MLXRandom.randInt(0..<inputSize, [batchSize])
             // Decay learning rate after 100,000 epochs
             let learningRate = epoch < 100000 ? lr : decayedLR
             let optimizer = SGD(learningRate: learningRate)
             
-            let indexes = MLXRandom.randInt(0..<x.shape[0], [batchSize])
             let lossAndGradients = valueAndGrad(model: self, loss)
+            
             let (loss, grads) = lossAndGradients(self, x[indexes], y[indexes])
             
             // Print gradients
@@ -121,6 +123,9 @@ class MLP: Module, UnaryLayer, MMNeuralNetwork {
             }
             
             optimizer.update(model: self, gradients: grads)
+            
+            eval(self, optimizer)
+            
             if debugPrint {
                 print("MLP Epoch \(epoch + 1)/\(epochSize) Loss: \(loss.asArray(Float.self)[0]), Learning Rare: \(learningRate)")
             }
@@ -201,7 +206,9 @@ class MLP: Module, UnaryLayer, MMNeuralNetwork {
         }
         return results
     }
-    
+}
+
+extension MLP {
     /// Plots the log10 of the loss values tracked during training
     ///
     /// - Parameters:
