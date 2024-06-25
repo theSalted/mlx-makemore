@@ -79,7 +79,7 @@ struct MakeMore {
         let yTest = y[n2...]
         
         let model = MLP(trainingDataSize: 27, hiddenLayerSize: 200, embeddingDimension: 10)
-        model.train(inputs: xTrain, outputs: yTrain, initialLearningRate: 0.04, epochSize: 200000)
+        model.train(inputs: xTrain, outputs: yTrain, initialLearningRate: 0.1, epochSize: 200000)
         
         model.evaluate(name: "train", inputs: xTrain, outputs: yTrain)
         model.evaluate(name: "dev", inputs: xDev, outputs: yDev)

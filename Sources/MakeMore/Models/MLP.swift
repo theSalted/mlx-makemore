@@ -170,6 +170,7 @@ class MLP: Module, UnaryLayer, MMNeuralNetwork {
     ///   - count: The number of samples to generate.
     ///   - indexer: An Indexer instance used to map indices to tokens.
     /// - Returns: An array of generated samples as strings.
+    @discardableResult
     func sample(
         _ count: Int = 20,
         blockSize: Int,
@@ -179,12 +180,11 @@ class MLP: Module, UnaryLayer, MMNeuralNetwork {
         var results = [String]()
         for _ in 0...count {
             
-            var context = [0] * blockSize
+            var context = Array(repeating: 0, count: blockSize)
             var out: [Int] = []
             
             while true {
-                let reshapedContext = MLXArray(Array(repeating: 0, count: blockSize), [1, blockSize])
-                reshapedContext[0] = context
+                let reshapedContext = MLXArray(context, [1, blockSize])
                 let embedding = C[reshapedContext]
                 let hiddenLayerActivation = tanh(matmul(embedding.reshaped(1, -1), weights1) + biases1)
                 let logits = matmul(hiddenLayerActivation, weights2) + biases2
@@ -205,6 +205,7 @@ class MLP: Module, UnaryLayer, MMNeuralNetwork {
                 }
             }
             let result = out.map({indexer.indexToTokenLookup[$0]!}).joined()
+            print("MLP Sample: ", result)
             results.append(result)
         }
         return results
