@@ -175,12 +175,12 @@ class MLP: Module, UnaryLayer, MMNeuralNetwork {
         blockSize: Int,
         indexer: Indexer
     ) -> [String] {
-        var results: [String] = []
-        let context = [0] * blockSize
         print("MLP predicting...")
+        var results = [String]()
         for _ in 0...count {
-            var index = 0
-            var result = ""
+            
+            var context = [0] * blockSize
+            var out: [Int] = []
             
             while true {
                 let reshapedContext = MLXArray(Array(repeating: 0, count: blockSize), [1, blockSize])
@@ -189,8 +189,13 @@ class MLP: Module, UnaryLayer, MMNeuralNetwork {
                 let hiddenLayerActivation = tanh(matmul(embedding.reshaped(1, -1), weights1) + biases1)
                 let logits = matmul(hiddenLayerActivation, weights2) + biases2
                 
-                let probability = softmax(logits)
-                index = multinomial(probability: probability, numberOfSamples: 1).item()
+                let probability = softmax(logits, axis: 1)
+                let index: Int = multinomial(probability: probability, numberOfSamples: 1).item()
+                
+                context = context[1...] + [index]
+                
+                out.append(index)
+                
                 guard let predictedCharacter = indexer.indexToTokenLookup[index] else {
                     print("Couldn't find character from indexer")
                     break
@@ -198,10 +203,8 @@ class MLP: Module, UnaryLayer, MMNeuralNetwork {
                 if predictedCharacter == indexer.closingToken {
                     break
                 }
-                context += [index]
-                result += predictedCharacter
             }
-            
+            let result = out.map({indexer.indexToTokenLookup[$0]!}).joined()
             results.append(result)
         }
         return results

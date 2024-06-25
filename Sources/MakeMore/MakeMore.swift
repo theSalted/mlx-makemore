@@ -86,7 +86,7 @@ struct MakeMore {
         model.evaluate(name: "test", inputs: xTest, outputs: yTest)
         model.plotLosses()
         /*model.plotLearningRates(inputs: xTrain, outputs: yTrain)*/
-        /*model.plotWordEmbedding(indexToTokenLookup: indexer.indexToTokenLookup)*/
+        model.plotWordEmbedding(indexToTokenLookup: indexer.indexToTokenLookup)
         let samples = model.sample(20, blockSize: 3, indexer: indexer)
         print(samples)
     }
