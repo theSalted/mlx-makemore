@@ -14,7 +14,7 @@ makemore takes one text file as input, and predicts more for you. With a wide ra
 - [ ] Transform
 
 ## Plots
-### Bigram Frequency
+### Bigram Frequencies
 ![image](https://github.com/theSalted/mlx-makemore/assets/30554090/20d04eff-8c8c-4f1b-a3c3-ef5df100307d)
 
 ### MLP Word Embedddings (C) Principal Components (1&2)
