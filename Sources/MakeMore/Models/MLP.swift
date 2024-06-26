@@ -32,6 +32,11 @@ class MLP: Module, UnaryLayer, MMNeuralNetwork {
     var weights2: MLXArray
     var biases2: MLXArray
     
+    var batchNormalizationGain: MLXArray
+    var batchNormalizationBias: MLXArray
+    var batchNormalizationMeanRunning: MLXArray
+    var batchNormalizationSTDRunning: MLXArray
+    
     /// Array to store loss values during training
     var lossValues: [Float] = []
     
@@ -53,6 +58,11 @@ class MLP: Module, UnaryLayer, MMNeuralNetwork {
         self.biases1 = MLXRandom.normal([hiddenLayerSize]) * 0.01
         self.weights2 = MLXRandom.normal([hiddenLayerSize, outputSize]) * 0.01
         self.biases2 = MLXRandom.normal([outputSize]) * 0.01
+        
+        self.batchNormalizationGain = MLXArray.ones([1, hiddenLayerSize])
+        self.batchNormalizationBias = MLXArray.zeros([1, hiddenLayerSize])
+        self.batchNormalizationMeanRunning = MLXArray.zeros([1, hiddenLayerSize])
+        self.batchNormalizationSTDRunning = MLXArray.ones([1, hiddenLayerSize])
     }
     
     /// Forward pass through the network
@@ -60,11 +70,18 @@ class MLP: Module, UnaryLayer, MMNeuralNetwork {
     /// - Parameter x: Input data
     /// - Returns: Logits
     func callAsFunction(_ x: MLXArray) -> MLXArray {
-        let embedding = C[x]
-        let embeddingConcatenate = embedding.reshaped(embedding.shape[0], embeddingDimension * 3)
-        let hiddenLayerPreActivation = matmul(embeddingConcatenate, weights1) + biases1
-        let hiddenLayerActivation = tanh(hiddenLayerPreActivation)
-        let logits = matmul(hiddenLayerActivation, weights2) + biases2
+        let embedding = C[x] // embed the characters into vectors
+        let embeddingConcatenate = embedding.reshaped(embedding.shape[0], embeddingDimension * 3) // concatenate the vectors
+        var hiddenLayerPreActivation = matmul(embeddingConcatenate, weights1) + biases1 // hidden layer pre-activation
+        let bNMeanI = hiddenLayerPreActivation.mean(axis: 0, keepDims: true)
+        let bNSTDI = std(hiddenLayerPreActivation, axis: 0, keepDims: true)
+        hiddenLayerPreActivation = batchNormalizationGain * (hiddenLayerPreActivation - bNMeanI) / bNSTDI + batchNormalizationBias
+        
+        batchNormalizationMeanRunning = stopGradient(0.999 * batchNormalizationMeanRunning + 0.0001 * bNMeanI )
+        batchNormalizationSTDRunning = stopGradient(0.999 * batchNormalizationSTDRunning + 0.0001 * bNSTDI)
+        
+        let hiddenLayerActivation = tanh(hiddenLayerPreActivation) // hidden layer
+        let logits = matmul(hiddenLayerActivation, weights2) + biases2 // output layer
         return logits
     }
     
@@ -119,7 +136,6 @@ class MLP: Module, UnaryLayer, MMNeuralNetwork {
             let lossAndGradients = valueAndGrad(model: self, loss)
             
             let (loss, grads) = lossAndGradients(self, x[indexes], y[indexes])
-            
             
             optimizer.update(model: self, gradients: grads)
             
@@ -185,7 +201,12 @@ class MLP: Module, UnaryLayer, MMNeuralNetwork {
             while true {
                 let reshapedContext = MLXArray(context, [1, blockSize])
                 let embedding = C[reshapedContext]
-                let hiddenLayerActivation = tanh(matmul(embedding.reshaped(1, -1), weights1) + biases1)
+                let embeddingConcatenate = embedding.reshaped(1, -1)
+                var hiddenLayerPreActivation = matmul(embeddingConcatenate, weights1) + biases1 // hidden layer pre-activation
+                hiddenLayerPreActivation = batchNormalizationGain * (hiddenLayerPreActivation - batchNormalizationMeanRunning) / batchNormalizationSTDRunning + batchNormalizationBias
+                
+                let hiddenLayerActivation = tanh(hiddenLayerPreActivation) // hidden layer
+                
                 let logits = matmul(hiddenLayerActivation, weights2) + biases2
                 
                 let probability = softmax(logits, axis: 1)
