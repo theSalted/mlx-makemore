@@ -36,6 +36,8 @@ struct MakeMore {
        
         // MARK: MLP
         mlp(names: names, indexer: indexer, wrapperToken: wrapperToken)
+        
+        // MARK:
     }
     
     @MainActor
@@ -79,13 +81,12 @@ struct MakeMore {
         let yTest = y[n2...]
         
         let model = MLP(trainingDataSize: 27, hiddenLayerSize: 200, embeddingDimension: 10)
+        model.plotLearningRates(inputs: xTrain, outputs: yTrain)
         model.train(inputs: xTrain, outputs: yTrain, initialLearningRate: 0.1, epochSize: 200000)
-        
         model.evaluate(name: "train", inputs: xTrain, outputs: yTrain)
         model.evaluate(name: "dev", inputs: xDev, outputs: yDev)
         model.evaluate(name: "test", inputs: xTest, outputs: yTest)
         model.plotLosses()
-        /*model.plotLearningRates(inputs: xTrain, outputs: yTrain)*/
         model.plotWordEmbedding(indexToTokenLookup: indexer.indexToTokenLookup)
         let samples = model.sample(20, blockSize: 3, indexer: indexer)
         print(samples)

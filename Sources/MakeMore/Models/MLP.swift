@@ -42,16 +42,17 @@ class MLP: Module, UnaryLayer, MMNeuralNetwork {
     ///   - hiddenLayerSize: Number of neurons in the hidden layer
     ///   - embeddingDimension: Dimension of the embedding vectors
     ///   - outputSize: Number of output classes
-    init(trainingDataSize: Int, hiddenLayerSize: Int = 200, embeddingDimension: Int = 2, outputSize: Int = 27) {
+    init(trainingDataSize: Int, hiddenLayerSize: Int = 200, embeddingDimension: Int = 2, blockSize: Int = 3, outputSize: Int = 27) {
         self.hiddenLayerSize = hiddenLayerSize
         self.embeddingDimension = embeddingDimension
         self.outputSize = outputSize
         
         self.C = MLXRandom.normal([trainingDataSize, embeddingDimension])
-        self.weights1 = MLXRandom.normal([embeddingDimension * 3, hiddenLayerSize])
-        self.biases1 = MLXRandom.normal([hiddenLayerSize])
-        self.weights2 = MLXRandom.normal([hiddenLayerSize, outputSize])
-        self.biases2 = MLXRandom.normal([outputSize])
+        let w1Kaiming: Float = sqrt((5/3)/(Float(embeddingDimension) * Float(blockSize)))
+        self.weights1 = MLXRandom.normal([embeddingDimension * blockSize, hiddenLayerSize]) * w1Kaiming
+        self.biases1 = MLXRandom.normal([hiddenLayerSize]) * 0.01
+        self.weights2 = MLXRandom.normal([hiddenLayerSize, outputSize]) * 0.01
+        self.biases2 = MLXRandom.normal([outputSize]) * 0.01
     }
     
     /// Forward pass through the network
@@ -60,7 +61,9 @@ class MLP: Module, UnaryLayer, MMNeuralNetwork {
     /// - Returns: Logits
     func callAsFunction(_ x: MLXArray) -> MLXArray {
         let embedding = C[x]
-        let hiddenLayerActivation = tanh(matmul(embedding.reshaped(embedding.shape[0], embeddingDimension * 3), weights1) + biases1)
+        let embeddingConcatenate = embedding.reshaped(embedding.shape[0], embeddingDimension * 3)
+        let hiddenLayerPreActivation = matmul(embeddingConcatenate, weights1) + biases1
+        let hiddenLayerActivation = tanh(hiddenLayerPreActivation)
         let logits = matmul(hiddenLayerActivation, weights2) + biases2
         return logits
     }
@@ -117,10 +120,6 @@ class MLP: Module, UnaryLayer, MMNeuralNetwork {
             
             let (loss, grads) = lossAndGradients(self, x[indexes], y[indexes])
             
-            // Print gradients
-            if epoch == 0 {
-                print("Gradients at epoch 0: \(grads)")
-            }
             
             optimizer.update(model: self, gradients: grads)
             
