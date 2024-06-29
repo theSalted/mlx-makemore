@@ -104,9 +104,3 @@ func plot(_ content: some View, name: String) {
         fatalError("Failed to save chart image: \(error)")
     }
 }
-
-struct IndexedPair<Element1, Element2>: Identifiable {
-    let id: Int
-    let element1: Element1
-    let element2: Element2
-}

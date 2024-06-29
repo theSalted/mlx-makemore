@@ -36,7 +36,7 @@ struct MakeMore {
        
         // MARK: MLP
         mlp(names: names, indexer: indexer, wrapperToken: wrapperToken)
-        
+        print(CustomLinear(1, 1).parameters())
         // MARK:
     }
     

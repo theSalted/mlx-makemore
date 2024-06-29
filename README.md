@@ -13,6 +13,17 @@ makemore takes one text file as input, and predicts more for you. With a wide ra
 - [ ] Gated Recurrent Unit (GRU)
 - [ ] Transform
 
+
+This project also implemented many functions and modules commonly used in deep learning. Some are out of necessity (e.g. `oneHot()` and `multinomial`) as they are missing from MLX. And some are to learn understand how ML frameworks work.
+
+- `oneHot`
+- `searchSorted`
+- `multinomial`
+- `plot`
+- `CustomLinear`
+- `BatchNorm1d`
+- `CustomTanh`
+
 ## Plots
 ### Bigram Frequencies
 ![image](https://github.com/theSalted/mlx-makemore/assets/30554090/20d04eff-8c8c-4f1b-a3c3-ef5df100307d)
