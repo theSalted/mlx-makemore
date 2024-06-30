@@ -35,6 +35,10 @@ class MLP: Module, UnaryLayer, MMNeuralNetwork {
     /// Array to store loss values during training
     var lossValues: [Float] = []
     
+    
+    // MARK: names (separated so they can be override, has everything to do with OOP and nothing with ML)
+    var name: String { "MLP"}
+    
     /// Initializes the MLP with given dimensions
     ///
     /// - Parameters:
@@ -101,14 +105,14 @@ class MLP: Module, UnaryLayer, MMNeuralNetwork {
         debugPrint: Bool = true
     ) -> Float {
         if debugPrint {
-            print("MLP training...")
+            print("\(name) training...")
         }
         
         eval(x, y)
         let inputSize = x.shape[0]
         // Print initial loss
         let initialLoss = loss(model: self, x: x, y: y)
-        print("Initial Loss: \(initialLoss.asArray(Float.self)[0])")
+        print("\(name) Initial Loss: \(initialLoss.asArray(Float.self)[0])")
         
         for epoch in 0..<epochSize {
             let indexes = MLXRandom.randInt(0..<inputSize, [batchSize])
@@ -125,7 +129,7 @@ class MLP: Module, UnaryLayer, MMNeuralNetwork {
             eval(self, optimizer)
             
             if debugPrint {
-                print("MLP Epoch \(epoch + 1)/\(epochSize) Loss: \(loss.asArray(Float.self)[0]), Learning Rare: \(learningRate)")
+                print("\(name) Epoch \(epoch + 1)/\(epochSize) Loss: \(loss.asArray(Float.self)[0]), Learning Rare: \(learningRate)")
             }
             
             // Track loss values
@@ -134,7 +138,7 @@ class MLP: Module, UnaryLayer, MMNeuralNetwork {
         
         let totalLoss = loss(model: self, x: x, y: y)
         if debugPrint {
-            print("MLP Total Loss: \(totalLoss)")
+            print("\(name) Total Loss: \(totalLoss)")
         }
         return totalLoss.item()
     }
@@ -153,7 +157,7 @@ class MLP: Module, UnaryLayer, MMNeuralNetwork {
         outputs y: MLXArray
     ) -> Float {
         let evaluationLoss: Float = loss(model: self, x: x, y: y).item()
-        print("MLP \(name) evaluation loss \(evaluationLoss)")
+        print("\(self.name) \(name) evaluation loss \(evaluationLoss)")
         return evaluationLoss
     }
     
@@ -174,7 +178,7 @@ class MLP: Module, UnaryLayer, MMNeuralNetwork {
         blockSize: Int,
         indexer: Indexer
     ) -> [String] {
-        print("MLP predicting...")
+        print("\(name) predicting...")
         var results = [String]()
         for _ in 0...count {
             
@@ -203,7 +207,7 @@ class MLP: Module, UnaryLayer, MMNeuralNetwork {
                 }
             }
             let result = out.map({indexer.indexToTokenLookup[$0]!}).joined()
-            print("MLP Sample: ", result)
+            print("\(name) Sample: ", result)
             results.append(result)
         }
         return results
@@ -224,7 +228,7 @@ extension MLP {
             LineMark(x: .value("Epoch", index), y: .value("Loss", log10Losses[index]))
         }.background(.white).padding().frame(width: 1000, height: 1000)
         
-        plot(chart, name: "MLP Log10 Loss Values")
+        plot(chart, name: "\(name) Log10 Loss Values")
     }
     
     /// Plots the learning rate vs. loss curve
@@ -242,7 +246,7 @@ extension MLP {
                            start: Float = -3,
                            stop: Float = 0,
                            count: Int = 1000) {
-        print("MLP learning rate finding…")
+        print("\(name) learning rate finding…")
         let lre = linspace(start, stop, count: count)
         let lrs = exp(lre)
         
@@ -250,16 +254,16 @@ extension MLP {
         for i in 0..<count {
             let lr: Float = lrs[i].item()
             let loss = train(inputs: x, outputs: y, initialLearningRate: lr, epochSize: 1, debugPrint: false)
-            print("MLP lr: \(lr), loss: \(loss)")
+            print("\(name) lr: \(lr), loss: \(loss)")
             let record = LossRecord(rate: lr, loss: loss)
             losses.append(record)
         }
         
         let chart = Chart {
-            LinePlot(losses, x: .value("Learning Rate", \.rate), y: .value("Loss", \.loss))
+            LinePlot(losses, x: .value("\(name) Learning Rate", \.rate), y: .value("Loss", \.loss))
         }.background(.white).padding().frame(width: 1000, height: 1000)
         
-        plot(chart, name: "MLP Learning Rates")
+        plot(chart, name: "\(name) Learning Rates")
     }
     
     /// Plots the word embeddings in 2D space
@@ -283,7 +287,7 @@ extension MLP {
             }
         }.background(.white).padding().frame(width: 1000, height: 1000, alignment: .center)
         
-        plot(chart, name: "MLP Word Feature Embedding")
+        plot(chart, name: "\(name) Word Feature Embedding")
     }
     
     /// Performs PCA on the embeddings to reduce dimensions to 2
@@ -302,7 +306,7 @@ extension MLP {
         let principalComponent1 = Vt[0]
         let principalComponent2 = Vt[1]
         
-        print("MLP PC1: \(principalComponent1), PC2: \(principalComponent2)")
+        print("\(name) PC1: \(principalComponent1), PC2: \(principalComponent2)")
     }
     
     /// Struct to record loss at different learning rates

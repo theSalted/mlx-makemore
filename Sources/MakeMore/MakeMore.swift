@@ -35,9 +35,9 @@ struct MakeMore {
         /*bigramNeuralNetwork(names: names, indexer: indexer, wrapperToken: wrapperToken)*/
        
         // MARK: MLP
-        mlp(names: names, indexer: indexer, wrapperToken: wrapperToken)
-        print(CustomLinear(1, 1).parameters())
-        // MARK:
+        /*mlp(names: names, indexer: indexer, wrapperToken: wrapperToken)*/
+        // MARK: MLP v2 (MLXNN-ify with BatchNorm1d and CustomLinear layers)
+        mlpv2(names: names, indexer: indexer, wrapperToken: wrapperToken)
     }
     
     @MainActor
@@ -57,6 +57,7 @@ struct MakeMore {
         print(samples)
     }
     
+    /// A character level language model powered by Multi-Layer Perceptron (MLP) Neural Network
     @MainActor
     static func mlp(names: [String], indexer: Indexer, wrapperToken: String) {
         let names = names.shuffled()
@@ -81,6 +82,44 @@ struct MakeMore {
         let yTest = y[n2...]
         
         let model = MLP(trainingDataSize: 27, hiddenLayerSize: 200, embeddingDimension: 10)
+        model.plotLearningRates(inputs: xTrain, outputs: yTrain)
+        model.train(inputs: xTrain, outputs: yTrain, initialLearningRate: 0.1, epochSize: 200000)
+        model.evaluate(name: "train", inputs: xTrain, outputs: yTrain)
+        model.evaluate(name: "dev", inputs: xDev, outputs: yDev)
+        model.evaluate(name: "test", inputs: xTest, outputs: yTest)
+        model.plotLosses()
+        model.plotWordEmbedding(indexToTokenLookup: indexer.indexToTokenLookup)
+        let samples = model.sample(20, blockSize: 3, indexer: indexer)
+        print(samples)
+    }
+    
+    /// A character level language model powered by Multi-Layer Perceptron (MLP) Neural Network (Version 2)
+    ///
+    /// - Warning: V2 is currently not working as expected, it doesn't' really converge. You should still use the original one
+    @MainActor
+    static func mlpv2(names: [String], indexer: Indexer, wrapperToken: String) {
+        let names = names.shuffled()
+        
+        /// https://www.jmlr.org/papers/volume3/bengio03a/bengio03a.pdf
+        let (x, y) = MLP.formatInputsOutputs(
+            from: Array(names),
+            indexer: indexer,
+            wrapperToken: wrapperToken,
+            blockSize: 3,
+            printDebug: false
+        )
+        
+        let n1 = Int(0.8 * Float(names.count))
+        let n2 = Int(0.9 * Float(names.count))
+        let xTrain = x[0..<n1]
+        let yTrain = y[0..<n1]
+        
+        let xDev = x[n1..<n2]
+        let yDev = y[n1..<n2]
+        let xTest = x[n2...]
+        let yTest = y[n2...]
+        
+        let model = MLPv2(trainingDataSize: 27, hiddenLayerSize: 200, embeddingDimension: 10)
         model.plotLearningRates(inputs: xTrain, outputs: yTrain)
         model.train(inputs: xTrain, outputs: yTrain, initialLearningRate: 0.1, epochSize: 200000)
         model.evaluate(name: "train", inputs: xTrain, outputs: yTrain)

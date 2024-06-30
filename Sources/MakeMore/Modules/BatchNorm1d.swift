@@ -17,7 +17,7 @@ class BatchNorm1d: Module, UnaryLayer {
     let eps: Float
     let momentum: Float
     
-    init(featureCount: Int, eps: Float, momentum: Float = 0.1) {
+    init(_ featureCount: Int, eps: Float = 1e-5, momentum: Float = 0.1) {
         self.eps = eps
         self.momentum = momentum
         // parameters
@@ -39,8 +39,8 @@ class BatchNorm1d: Module, UnaryLayer {
             xVariance = runningVariance
         }
         
-        var xHat = (x - xMean) / sqrt(xVariance + eps)
-        var out = gamma * xHat + beta
+        let xHat = (x - xMean) / sqrt(xVariance + eps)
+        let out = gamma * xHat + beta
         
         if training {
             runningMean = stopGradient((1 - momentum) * runningMean + momentum * xMean)

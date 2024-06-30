@@ -8,13 +8,14 @@
 import MLX
 import MLXNN
 import MLXRandom
+import Foundation
 
 class CustomLinear: Module, UnaryLayer {
     let weight: MLXArray
     let bias: MLXArray?
     
     init(_ inputDimensions: Int, _ outputDimensions: Int, bias: Bool = true) {
-        self.weight = MLXRandom.uniform(low: 0.0, high: 1.0, [inputDimensions, outputDimensions])
+        self.weight = MLXRandom.uniform(low: 0.0, high: 1.0, [inputDimensions, outputDimensions]) / sqrt(Float(inputDimensions))
         self.bias = bias ? MLXArray.zeros([outputDimensions]) : nil
     }
     
