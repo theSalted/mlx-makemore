@@ -6,6 +6,8 @@
 //
 import MLX
 import MLXNN
+import MLXRandom
+import Foundation
 
 class BatchNorm1d: Module, UnaryLayer {
     let gamma: MLXArray
@@ -21,10 +23,10 @@ class BatchNorm1d: Module, UnaryLayer {
         self.eps = eps
         self.momentum = momentum
         // parameters
-        self.gamma = MLXArray.zeros([featureCount])
-        self.beta = MLXArray.ones([featureCount])
+        self.gamma = MLXArray.ones([featureCount])
+        self.beta = MLXArray.zeros([featureCount])
         // buffers
-        self.runningMean =  MLXArray.zeros([featureCount])
+        self.runningMean = MLXArray.zeros([featureCount])
         self.runningVariance = MLXArray.ones([featureCount])
     }
     
@@ -48,5 +50,5 @@ class BatchNorm1d: Module, UnaryLayer {
         }
         
         return out
-    } 
+    }
 }
