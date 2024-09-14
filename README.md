@@ -7,11 +7,11 @@ makemore takes one text file as input, and predicts more for you. With a wide ra
 - [x] Bigram
 - [x] Bigram Neural Network
 - [x] Multi-layer Perceptron (MLP)
-- [ ] Convolution Nerual Network (CNN)
-- [ ] Recurrent Neural Network (RNN)
-- [ ] Long Short-Term Memory (LSTM)
-- [ ] Gated Recurrent Unit (GRU)
-- [ ] Transform
+- [x] Convolution Nerual Network (CNN)
+- [x] Recurrent Neural Network (RNN)
+- [x] Long Short-Term Memory (LSTM)
+- [x] Gated Recurrent Unit (GRU)
+- [x] Transform
 
 
 This project also implemented many functions and modules commonly used in deep learning. Some are out of necessity (e.g. `oneHot()` and `multinomial`) as they are missing from MLX. And some are to learn understand how ML frameworks work.
